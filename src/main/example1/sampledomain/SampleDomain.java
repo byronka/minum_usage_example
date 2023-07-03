@@ -1,18 +1,18 @@
 package example1.sampledomain;
 
+import example1.auth.AuthUtils;
 import minum.database.DatabaseDiskPersistenceSimpler;
 import minum.utils.StringUtils;
 import minum.web.Request;
 import minum.web.Response;
-import example1.auth.AuthUtils;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import static minum.database.SimpleIndexed.calculateNextIndex;
-import static minum.web.StatusLine.StatusCode.*;
+import static minum.web.StatusLine.StatusCode._303_SEE_OTHER;
+import static minum.web.StatusLine.StatusCode._401_UNAUTHORIZED;
 
 
 public class SampleDomain {
@@ -26,8 +26,7 @@ public class SampleDomain {
         this.ddps = diskData;
         personNames = diskData.readAndDeserialize(PersonName.EMPTY);
         this.auth = auth;
-
-        newPersonIndex = new AtomicLong(calculateNextIndex(personNames));
+        newPersonIndex = new AtomicLong(ddps.calculateNextIndex(personNames));
     }
 
     public Response formEntry(Request r) {
@@ -36,8 +35,8 @@ public class SampleDomain {
             return new Response(_401_UNAUTHORIZED);
         }
         final String names = personNames
-                .stream().sorted(Comparator.comparingLong(PersonName::index))
-                .map(x -> "<li>" + StringUtils.safeHtml(x.fullname()) + "</li>\n")
+                .stream().sorted(Comparator.comparingLong(PersonName::getIndex))
+                .map(x -> "<li>" + StringUtils.safeHtml(x.getFullname()) + "</li>\n")
                 .collect(Collectors.joining());
 
         return Response.htmlOk("""

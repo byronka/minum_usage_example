@@ -1,15 +1,15 @@
 package example1.sampledomain;
 
+import minum.Constants;
+import minum.Context;
+import example1.auth.AuthUtils;
 import minum.logging.ILogger;
 import minum.templating.TemplateProcessor;
 import minum.utils.FileUtils;
 import minum.utils.LRUCache;
 import minum.utils.StacktraceUtils;
-import minum.web.FullSystem;
 import minum.web.Request;
 import minum.web.Response;
-import minum.web.WebFramework;
-import example1.auth.AuthUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,10 +33,12 @@ public class ListPhotos {
     private final UploadPhoto up;
     private final AuthUtils auth;
     private final Map<String, byte[]> lruCache;
+    private final Constants constants;
 
-    public ListPhotos(WebFramework wf, UploadPhoto up, AuthUtils auth) {
-        this.logger = wf.getLogger();
-        this.dbDir = Path.of(FullSystem.getConfiguredProperties().getProperty("dbdir", "out/simple_db/"));
+    public ListPhotos(Context context, UploadPhoto up, AuthUtils auth) {
+        this.logger = context.getLogger();
+        this.constants = context.getConstants();
+        this.dbDir = Path.of(constants.DB_DIRECTORY);
         listPhotosTemplateProcessor = TemplateProcessor.buildProcessor(FileUtils.readTemplate("listphotos/list_photos_template.html"));
         this.up = up;
         this.auth = auth;
@@ -46,13 +48,13 @@ public class ListPhotos {
     public Response ListPhotosPage(Request r) {
 
         String photoHtml = up.getPhotographs().stream().map(x ->
-                """
-                <li>
-                    <img src="photo?name=%s" alt="photo alt text" title="photo title text" />
-                    <p>%s</p>
-                    <p>%s</p>
-                </li>
-                """.formatted(x.photoUrl(), x.shortDescription(), x.description())).collect(Collectors.joining ("\n"));
+        """
+        <li>
+            <img src="photo?name=%s" alt="photo alt text" title="photo title text" />
+            <p>%s</p>
+            <p>%s</p>
+        </li>
+        """.formatted(x.getPhotoUrl(), x.getShortDescription(), x.getDescription())).collect(Collectors.joining ("\n"));
 
         String navBar = auth.processAuth(r).isAuthenticated() ? "<p><a href=\"logout\">Logout</a></p><p><a href=\"upload\">Upload</a></p>" : "";
 

@@ -1,5 +1,6 @@
 package example1.sampledomain;
 
+import minum.Context;
 import minum.testing.TestLogger;
 import minum.utils.LRUCache;
 
@@ -12,12 +13,12 @@ public class ListPhotosTests {
 
     private final TestLogger logger;
 
-    public ListPhotosTests(TestLogger logger) {
-        this.logger = logger;
+    public ListPhotosTests(Context context) {
+        this.logger = (TestLogger) context.getLogger();
         logger.testSuite("List Photos Tests", "ListPhotosTests");
     }
 
-    public void tests(ExecutorService es) {
+    public void tests() {
 
         /*
          * The LRU Cache (LRUCache) is a useful cache, based on

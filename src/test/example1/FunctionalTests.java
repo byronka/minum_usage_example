@@ -1,7 +1,10 @@
 package example1;
 
+import minum.Context;
+import minum.logging.ILogger;
 import minum.testing.TestLogger;
 import minum.utils.MyThread;
+import minum.utils.StringUtils;
 import minum.web.*;
 
 import java.io.IOException;
@@ -11,7 +14,6 @@ import java.util.List;
 import static minum.testing.RegexUtils.find;
 import static minum.testing.TestFramework.assertEquals;
 import static minum.testing.TestFramework.assertTrue;
-import static minum.web.InputStreamUtils.readLine;
 import static minum.web.StatusLine.StatusCode.*;
 
 /**
@@ -20,21 +22,30 @@ import static minum.web.StatusLine.StatusCode.*;
  */
 public class FunctionalTests {
 
-    private final TestLogger logger;
+    private final ILogger logger;
     final Server primaryServer;
     final WebEngine webEngine;
+    private final Context context;
+    private final InputStreamUtils inputStreamUtils;
+    private final WebFramework webFramework;
 
-    public FunctionalTests(TestLogger logger, Server primaryServer) {
-        this.logger = logger;
-        this.primaryServer = primaryServer;
-        this.webEngine = new WebEngine(logger, null);
-        logger.testSuite("Functional tests", "FunctionalTests");
+    public FunctionalTests(WebFramework wf) {
+        this.webFramework = wf;
+        this.logger = wf.getLogger();
+        this.context = wf.getFullSystem().getContext();
+        this.primaryServer = wf.getFullSystem().getServer();
+        this.webEngine = new WebEngine(context);
+        this.inputStreamUtils = new InputStreamUtils(context);
+
     }
 
     public void test() throws Exception {
-        logger.test("First functional test"); {
+        System.out.println("First functional test"); {
 
-            // grab the photos page unauthenticated
+            /*
+            grab the photos page unauthenticated. We should be able
+            to view the photos.
+             */
             assertEquals(get("photos").statusLine().status(), _200_OK);
 
             // go to the page for registering a user, while unauthenticated.
@@ -89,6 +100,24 @@ public class FunctionalTests {
             // if we try to upload a name on the sampledomain auth, we're prevented
             assertEquals(post("testform", "foo=bar").statusLine().status(), _401_UNAUTHORIZED);
 
+            // *********** ERROR HANDLING SECTION *****************
+            // if we try sending too many characters on a line, it should block us
+            try (var client = webEngine.startClient(primaryServer)) {
+                // send a GET request
+                client.sendHttpLine("a".repeat(context.getConstants().MAX_READ_LINE_SIZE_BYTES + 1));
+            }
+
+            // remember, we're the client, we don't have immediate access to the server here.  So,
+            // we have to wait for it to get through some processing before we check.
+            MyThread.sleep(50);
+            String failureMsg = ((TestLogger)logger).findFirstMessageThatContains("in readLine");
+            assertEquals(failureMsg, "in readLine, client sent more bytes than allowed.  Current max: 200");
+
+            // if we try sending a request that looks like an attack, block the client
+            assertEquals(get("version").statusLine().status(), _404_NOT_FOUND);
+            MyThread.sleep(50);
+            String vulnMsg = ((TestLogger)logger).findFirstMessageThatContains("looking for a vulnerability? true");
+            assertTrue(vulnMsg.contains("looking for a vulnerability? true"), "expect to find correct error in this: " + vulnMsg);
         }
 
     }
@@ -100,10 +129,10 @@ public class FunctionalTests {
     }
 
     public TestResponse get(String path, List<String> extraHeaders) throws IOException {
-        Body body = Body.EMPTY;
+        Body body = Body.EMPTY(context);
         Headers headers;
         StatusLine statusLine;
-        try (SocketWrapper client = webEngine.startClient(primaryServer)) {
+        try (var client = webEngine.startClient(primaryServer)) {
             InputStream is = client.getInputStream();
 
             // send a GET request
@@ -114,14 +143,15 @@ public class FunctionalTests {
             }
             client.sendHttpLine("");
 
-            statusLine = StatusLine.extractStatusLine(readLine(is));
+            statusLine = StatusLine.extractStatusLine(inputStreamUtils.readLine(is));
 
-            headers = Headers.extractHeaderInformation(is);
+            headers = Headers.make(context, inputStreamUtils).extractHeaderInformation(is);
 
-            BodyProcessor bodyProcessor = new BodyProcessor(logger);
+            BodyProcessor bodyProcessor = new BodyProcessor(context);
 
 
-            if (WebFramework.isThereIsABody(headers)) {
+            // Determine whether there is a body (a block of data) in this request
+            if (webFramework.isThereIsABody(headers)) {
                 logger.logTrace(() -> "There is a body. Content-type is " + headers.contentType());
                 body = bodyProcessor.extractData(is, headers);
             }
@@ -136,13 +166,13 @@ public class FunctionalTests {
     }
 
     public TestResponse post(String path, String payload, List<String> extraHeaders) throws IOException {
-        Body body = Body.EMPTY;
+        Body body = Body.EMPTY(context);
         Headers headers;
         StatusLine statusLine;
-        try (SocketWrapper client = webEngine.startClient(primaryServer)) {
+        try (var client = webEngine.startClient(primaryServer)) {
             InputStream is = client.getInputStream();
 
-            // send a GET request
+            // send a POST request
             client.sendHttpLine("POST /"+path+" HTTP/1.1");
             client.sendHttpLine("Host: localhost:8080");
             client.sendHttpLine("Content-Length: " + payload.length());
@@ -153,15 +183,14 @@ public class FunctionalTests {
             client.sendHttpLine("");
             client.sendHttpLine(payload);
 
-            statusLine = StatusLine.extractStatusLine(readLine(is));
+            statusLine = StatusLine.extractStatusLine(inputStreamUtils.readLine(is));
 
-            headers = Headers.extractHeaderInformation(is);
+            headers = Headers.make(context, inputStreamUtils).extractHeaderInformation(is);
 
-            BodyProcessor bodyProcessor = new BodyProcessor(logger);
+            BodyProcessor bodyProcessor = new BodyProcessor(context);
 
 
-            // Determine whether there is a body (a block of data) in this request
-            if (WebFramework.isThereIsABody(headers)) {
+            if (webFramework.isThereIsABody(headers)) {
                 logger.logTrace(() -> "There is a body. Content-type is " + headers.contentType());
                 body = bodyProcessor.extractData(is, headers);
             }

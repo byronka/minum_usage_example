@@ -44,7 +44,7 @@ Note that SampleDomain is also demonstrating usage of the AuthUtils class, which
 deep magic knowledge - it just looks at the request instances and makes its decisions (like examining the 
 cookie header and checking its list of known sessions)
 
-See how the class and related method are "registered" in the class titled "TheRegister".  Please use 
+See how the class and related method are "registered" in the class titled "minum.TheRegister".  Please use 
 the same patterns in your own code to register each new business need.
 
 All this should keep your systems exceedingly simple, which will aid maintenance.
