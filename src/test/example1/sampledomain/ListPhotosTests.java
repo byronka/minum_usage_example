@@ -15,7 +15,7 @@ public class ListPhotosTests {
 
     public ListPhotosTests(Context context) {
         this.logger = (TestLogger) context.getLogger();
-        logger.testSuite("List Photos Tests", "ListPhotosTests");
+        logger.testSuite("ListPhotosTests");
     }
 
     public void tests() {

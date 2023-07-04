@@ -63,7 +63,7 @@ public class Tests {
 
     logger.writeTestReport();
     FileUtils.deleteDirectoryRecursivelyIfExists(Path.of(constants.DB_DIRECTORY), logger);
-    context.killAllQueues();
+    new ActionQueueKiller(context).killAllQueues();
     context.getExecutorService().shutdownNow();
   }
 
