@@ -47,6 +47,7 @@ public class TheRegister {
         // sample domain stuff
         webFramework.registerPath(StartLine.Verb.GET, "formentry", sd::formEntry);
         webFramework.registerPath(StartLine.Verb.POST, "testform", sd::testform);
+        webFramework.registerPath(StartLine.Verb.GET, "hello", sd::helloName);
 
         // photos stuff
         webFramework.registerPath(StartLine.Verb.GET, "photos", lp::ListPhotosPage);

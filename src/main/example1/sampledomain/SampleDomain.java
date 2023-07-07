@@ -14,8 +14,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import static minum.web.StatusLine.StatusCode._303_SEE_OTHER;
-import static minum.web.StatusLine.StatusCode._401_UNAUTHORIZED;
+import static minum.web.StatusLine.StatusCode.*;
 
 
 public class SampleDomain {
@@ -78,6 +77,17 @@ public class SampleDomain {
             return Response.htmlOk(authHomepage);
         }
 
+    }
+
+    /**
+     * a GET request, at /hello?name=foo
+     * <p>
+     *     Replies "hello foo"
+     * </p>
+     */
+    public Response helloName(Request request) {
+        String name = request.startLine().queryString().get("name");
+        return new Response(_200_OK, "hello " + name, List.of("Content-type: text/plain"));
     }
 
 }
