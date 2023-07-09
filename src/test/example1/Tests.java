@@ -6,7 +6,7 @@ import example1.sampledomain.ListPhotosTests;
 import minum.Constants;
 import minum.Context;
 import minum.FullSystem;
-import minum.LoggingContext;
+import minum.logging.LoggingContext;
 import minum.testing.TestLogger;
 import minum.utils.*;
 import minum.web.*;
