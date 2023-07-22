@@ -1,8 +1,8 @@
 package example1.sampledomain;
 
-import minum.database.SimpleDataTypeImpl;
+import minum.database.DbData;
 
-public class PersonName extends SimpleDataTypeImpl<PersonName> {
+public class PersonName extends DbData<PersonName> {
 
     private long index;
     private final String fullname;
