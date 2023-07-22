@@ -82,7 +82,7 @@ public class UploadPhoto {
     }
 
     public List<Photograph> getPhotographs() {
-        return ddps.stream().toList();
+        return ddps.values().stream().toList();
     }
 
 }
